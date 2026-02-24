@@ -21,34 +21,54 @@ export default function App() {
     setDisplay(prev => (prev === '0' ? num : prev + num));
   };
 
+  const evaluateExpression = (expr: string) => {
+    const parts = expr.trim().split(' ');
+    if (parts.length < 3) return parts[0];
+
+    let result = parseFloat(parts[0]);
+    for (let i = 1; i < parts.length; i += 2) {
+      const op = parts[i];
+      const nextVal = parseFloat(parts[i + 1]);
+      if (isNaN(nextVal)) continue;
+
+      switch (op) {
+        case '+': result += nextVal; break;
+        case '-': result -= nextVal; break;
+        case '×': result *= nextVal; break;
+        case '÷': result = nextVal !== 0 ? result / nextVal : 0; break;
+      }
+    }
+    return Number(result.toFixed(8)).toString();
+  };
+
   const handleOperator = (op: string) => {
-    setIsFinished(false);
-    setEquation(display + ' ' + op + ' ');
+    if (isFinished) {
+      setEquation(display + ' ' + op + ' ');
+      setIsFinished(false);
+      setDisplay('0');
+      return;
+    }
+
+    // If user presses operator multiple times, replace the last one
+    if (display === '0' && equation !== '') {
+      setEquation(prev => {
+        const parts = prev.trim().split(' ');
+        parts[parts.length - 1] = op;
+        return parts.join(' ') + ' ';
+      });
+      return;
+    }
+
+    setEquation(prev => prev + display + ' ' + op + ' ');
     setDisplay('0');
   };
 
   const calculate = () => {
+    if (!equation) return;
     try {
       const fullEquation = equation + display;
-      // Basic math evaluation (safe for simple calculator)
-      // We'll use a simple parser to avoid eval()
-      const parts = fullEquation.split(' ');
-      if (parts.length < 3) return;
-
-      const a = parseFloat(parts[0]);
-      const op = parts[1];
-      const b = parseFloat(parts[2]);
-
-      let result = 0;
-      switch (op) {
-        case '+': result = a + b; break;
-        case '-': result = a - b; break;
-        case '×': result = a * b; break;
-        case '÷': result = b !== 0 ? a / b : 0; break;
-      }
-
-      const formattedResult = Number(result.toFixed(8)).toString();
-      setDisplay(formattedResult);
+      const result = evaluateExpression(fullEquation);
+      setDisplay(result);
       setEquation('');
       setIsFinished(true);
     } catch (e) {
