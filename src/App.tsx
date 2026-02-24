@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Delete, RotateCcw, Equal, Plus, Minus, X, Divide } from 'lucide-react';
+import { Delete, RotateCcw, Equal, Plus, Minus, X, Divide, Percent } from 'lucide-react';
 
 export default function App() {
   const [display, setDisplay] = useState('0');
@@ -77,6 +77,18 @@ export default function App() {
     }
   };
 
+  const handlePercent = () => {
+    const currentVal = parseFloat(display);
+    if (isNaN(currentVal)) return;
+    
+    // If there's an equation, percentage usually means % of the first number
+    // e.g., 200 + 10% = 220
+    // But for simplicity in a basic calculator, it often just divides by 100
+    // Let's implement the "divide by 100" behavior first as it's more standard for the % key alone
+    const result = currentVal / 100;
+    setDisplay(result.toString());
+  };
+
   const clear = () => {
     setDisplay('0');
     setEquation('');
@@ -140,17 +152,23 @@ export default function App() {
             </div>
           </div>
 
-          {/* Snout (Visual Element) */}
+          {/* Snout (Functional Clear Button) */}
           <div className="flex justify-center -mt-2 mb-4">
-            <div className="w-20 h-12 bg-pink-200 rounded-full border-4 border-pink-300 flex items-center justify-center gap-3">
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              whileHover={{ scale: 1.05 }}
+              onClick={clear}
+              title="Clear All"
+              className="w-20 h-12 bg-pink-200 rounded-full border-4 border-pink-300 flex items-center justify-center gap-3 cursor-pointer shadow-sm hover:bg-pink-300 transition-colors"
+            >
               <div className="w-3 h-3 bg-pink-400 rounded-full"></div>
               <div className="w-3 h-3 bg-pink-400 rounded-full"></div>
-            </div>
+            </motion.button>
           </div>
 
           {/* Keypad */}
           <div className="p-4 grid grid-cols-4 gap-3">
-            <Button variant="action" onClick={clear}><RotateCcw size={24} /></Button>
+            <Button variant="action" onClick={handlePercent}><Percent size={24} /></Button>
             <Button variant="action" onClick={backspace}><Delete size={24} /></Button>
             <Button variant="operator" onClick={() => handleOperator('÷')}><Divide size={24} /></Button>
             <Button variant="operator" onClick={() => handleOperator('×')}><X size={24} /></Button>
