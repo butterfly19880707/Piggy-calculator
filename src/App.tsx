@@ -152,13 +152,13 @@ export default function App() {
             </div>
           </div>
 
-          {/* Snout (Functional Clear Button) */}
+          {/* Snout (Functional Backspace Button) */}
           <div className="flex justify-center -mt-2 mb-4">
             <motion.button
               whileTap={{ scale: 0.9 }}
               whileHover={{ scale: 1.05 }}
-              onClick={clear}
-              title="Clear All"
+              onClick={backspace}
+              title="Backspace"
               className="w-20 h-12 bg-pink-200 rounded-full border-4 border-pink-300 flex items-center justify-center gap-3 cursor-pointer shadow-sm hover:bg-pink-300 transition-colors"
             >
               <div className="w-3 h-3 bg-pink-400 rounded-full"></div>
@@ -169,7 +169,7 @@ export default function App() {
           {/* Keypad */}
           <div className="p-4 grid grid-cols-4 gap-3">
             <Button variant="action" onClick={handlePercent}><Percent size={24} /></Button>
-            <Button variant="action" onClick={backspace}><Delete size={24} /></Button>
+            <Button variant="action" onClick={clear}><RotateCcw size={24} /></Button>
             <Button variant="operator" onClick={() => handleOperator('÷')}><Divide size={24} /></Button>
             <Button variant="operator" onClick={() => handleOperator('×')}><X size={24} /></Button>
 
