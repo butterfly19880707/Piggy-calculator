@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Delete, RotateCcw, Equal, Plus, Minus, X, Divide, Percent, History, Trash2, X as CloseIcon } from 'lucide-react';
+import { Delete, RotateCcw, Equal, Plus, Minus, X, Divide, Percent, History, Trash2, X as CloseIcon, Download } from 'lucide-react';
 
 export default function App() {
   const [display, setDisplay] = useState('0');
@@ -13,8 +13,46 @@ export default function App() {
   const [isFinished, setIsFinished] = useState(false);
   const [history, setHistory] = useState<{ equation: string; result: string }[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showInstallHint, setShowInstallHint] = useState(false);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    // Check if it's iOS and not already installed
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
+    
+    if (isIOS && !isStandalone) {
+      setShowInstallHint(true);
+    }
+
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
+
+  const triggerVibration = () => {
+    if ('vibrate' in navigator) {
+      navigator.vibrate(10);
+    }
+  };
+
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+      }
+    }
+  };
 
   const handleNumber = (num: string) => {
+    triggerVibration();
     if (isFinished) {
       setDisplay(num);
       setIsFinished(false);
@@ -44,6 +82,7 @@ export default function App() {
   };
 
   const handleOperator = (op: string) => {
+    triggerVibration();
     if (isFinished) {
       setEquation(display + ' ' + op + ' ');
       setIsFinished(false);
@@ -66,6 +105,7 @@ export default function App() {
   };
 
   const calculate = () => {
+    triggerVibration();
     if (!equation) return;
     try {
       const fullEquation = equation + display;
@@ -84,6 +124,7 @@ export default function App() {
   };
 
   const handlePercent = () => {
+    triggerVibration();
     const currentVal = parseFloat(display);
     if (isNaN(currentVal)) return;
     
@@ -96,12 +137,14 @@ export default function App() {
   };
 
   const clear = () => {
+    triggerVibration();
     setDisplay('0');
     setEquation('');
     setIsFinished(false);
   };
 
   const backspace = () => {
+    triggerVibration();
     if (isFinished) return;
     setDisplay(prev => (prev.length > 1 ? prev.slice(0, -1) : '0'));
   };
@@ -137,8 +180,44 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-pink-50 flex flex-col items-center justify-center p-4 font-sans select-none overflow-hidden touch-none relative">
+    <div className="min-h-screen bg-pink-50 flex flex-col items-center justify-center p-4 font-sans select-none overflow-hidden touch-none relative safe-top safe-bottom">
       
+      {/* Install Button (Android/Chrome) */}
+      {deferredPrompt && (
+        <motion.button
+          initial={{ y: -50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          onClick={handleInstallClick}
+          className="absolute top-6 left-6 p-3 bg-pink-500 text-white rounded-full shadow-lg z-20 flex items-center gap-2 px-4"
+        >
+          <Download size={20} />
+          <span className="text-xs font-bold uppercase tracking-wider">Install App</span>
+        </motion.button>
+      )}
+
+      {/* iOS Install Hint */}
+      <AnimatePresence>
+        {showInstallHint && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-white p-4 rounded-2xl shadow-2xl z-50 border-4 border-pink-200 w-[90%] max-w-xs text-center"
+          >
+            <button 
+              onClick={() => setShowInstallHint(false)}
+              className="absolute top-2 right-2 text-pink-300"
+            >
+              <CloseIcon size={16} />
+            </button>
+            <p className="text-pink-600 font-bold text-sm mb-2">Install Piggy Calculator!</p>
+            <p className="text-pink-400 text-xs">
+              Tap the <span className="font-bold">Share</span> button and select <span className="font-bold">"Add to Home Screen"</span> to use it as a mobile app!
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* History Toggle Button */}
       <motion.button
         whileTap={{ scale: 0.9 }}

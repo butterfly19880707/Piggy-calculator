@@ -4,9 +4,11 @@
   "description": "A cute, pink pig-themed calculator app.",
   "start_url": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "minimal-ui"],
   "background_color": "#fdf2f8",
   "theme_color": "#ec4899",
   "orientation": "portrait",
+  "categories": ["productivity", "utilities"],
   "icons": [
     {
       "src": "/icon.png",
