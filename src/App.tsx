@@ -131,7 +131,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-pink-50 flex flex-col items-center justify-center p-4 font-sans">
+    <div className="min-h-screen bg-pink-50 flex flex-col items-center justify-center p-4 font-sans select-none overflow-hidden touch-none">
       {/* Piggy Head Container */}
       <div className="relative w-full max-w-xs">
         
