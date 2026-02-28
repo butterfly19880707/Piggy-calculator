@@ -3,56 +3,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Delete, RotateCcw, Equal, Plus, Minus, X, Divide, Percent, History, Trash2, X as CloseIcon, Download } from 'lucide-react';
+import { Delete, RotateCcw, Equal, Plus, Minus, X, Divide, Percent } from 'lucide-react';
 
 export default function App() {
   const [display, setDisplay] = useState('0');
   const [equation, setEquation] = useState('');
   const [isFinished, setIsFinished] = useState(false);
-  const [history, setHistory] = useState<{ equation: string; result: string }[]>([]);
-  const [showHistory, setShowHistory] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [showInstallHint, setShowInstallHint] = useState(false);
-
-  useEffect(() => {
-    const handleBeforeInstallPrompt = (e: any) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    // Check if it's iOS and not already installed
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
-    
-    if (isIOS && !isStandalone) {
-      setShowInstallHint(true);
-    }
-
-    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-  }, []);
-
-  const triggerVibration = () => {
-    if ('vibrate' in navigator) {
-      navigator.vibrate(10);
-    }
-  };
-
-  const handleInstallClick = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        setDeferredPrompt(null);
-      }
-    }
-  };
 
   const handleNumber = (num: string) => {
-    triggerVibration();
     if (isFinished) {
       setDisplay(num);
       setIsFinished(false);
@@ -82,7 +42,6 @@ export default function App() {
   };
 
   const handleOperator = (op: string) => {
-    triggerVibration();
     if (isFinished) {
       setEquation(display + ' ' + op + ' ');
       setIsFinished(false);
@@ -105,15 +64,10 @@ export default function App() {
   };
 
   const calculate = () => {
-    triggerVibration();
     if (!equation) return;
     try {
       const fullEquation = equation + display;
       const result = evaluateExpression(fullEquation);
-      
-      // Add to history
-      setHistory(prev => [{ equation: fullEquation, result }, ...prev].slice(0, 50));
-      
       setDisplay(result);
       setEquation('');
       setIsFinished(true);
@@ -124,7 +78,6 @@ export default function App() {
   };
 
   const handlePercent = () => {
-    triggerVibration();
     const currentVal = parseFloat(display);
     if (isNaN(currentVal)) return;
     
@@ -137,14 +90,12 @@ export default function App() {
   };
 
   const clear = () => {
-    triggerVibration();
     setDisplay('0');
     setEquation('');
     setIsFinished(false);
   };
 
   const backspace = () => {
-    triggerVibration();
     if (isFinished) return;
     setDisplay(prev => (prev.length > 1 ? prev.slice(0, -1) : '0'));
   };
@@ -180,122 +131,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-pink-50 flex flex-col items-center justify-center p-4 font-sans select-none overflow-hidden touch-none relative safe-top safe-bottom">
-      
-      {/* Install Button (Android/Chrome) */}
-      {deferredPrompt && (
-        <motion.button
-          initial={{ y: -50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          onClick={handleInstallClick}
-          className="absolute top-6 left-6 p-3 bg-pink-500 text-white rounded-full shadow-lg z-20 flex items-center gap-2 px-4"
-        >
-          <Download size={20} />
-          <span className="text-xs font-bold uppercase tracking-wider">Install App</span>
-        </motion.button>
-      )}
-
-      {/* iOS Install Hint */}
-      <AnimatePresence>
-        {showInstallHint && (
-          <motion.div
-            initial={{ y: 100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 100, opacity: 0 }}
-            className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-white p-4 rounded-2xl shadow-2xl z-50 border-4 border-pink-200 w-[90%] max-w-xs text-center"
-          >
-            <button 
-              onClick={() => setShowInstallHint(false)}
-              className="absolute top-2 right-2 text-pink-300"
-            >
-              <CloseIcon size={16} />
-            </button>
-            <p className="text-pink-600 font-bold text-sm mb-2">Install Piggy Calculator!</p>
-            <p className="text-pink-400 text-xs">
-              Tap the <span className="font-bold">Share</span> button and select <span className="font-bold">"Add to Home Screen"</span> to use it as a mobile app!
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* History Toggle Button */}
-      <motion.button
-        whileTap={{ scale: 0.9 }}
-        onClick={() => setShowHistory(true)}
-        className="absolute top-6 right-6 p-3 bg-white rounded-full shadow-md text-pink-400 hover:text-pink-600 transition-colors z-20"
-      >
-        <History size={24} />
-      </motion.button>
-
-      {/* History Sidebar/Overlay */}
-      <AnimatePresence>
-        {showHistory && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowHistory(false)}
-              className="fixed inset-0 bg-pink-900/20 backdrop-blur-sm z-30"
-            />
-            <motion.div
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed top-0 right-0 h-full w-full max-w-xs bg-white shadow-2xl z-40 p-6 flex flex-col border-l-4 border-pink-200"
-            >
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-pink-600 flex items-center gap-2">
-                  <History size={24} />
-                  History
-                </h2>
-                <button 
-                  onClick={() => setShowHistory(false)}
-                  className="p-2 hover:bg-pink-50 rounded-full text-pink-400 transition-colors"
-                >
-                  <CloseIcon size={24} />
-                </button>
-              </div>
-
-              <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
-                {history.length === 0 ? (
-                  <div className="text-center py-10 text-pink-300 italic">
-                    No calculations yet!
-                  </div>
-                ) : (
-                  history.map((item, index) => (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      key={index}
-                      className="bg-pink-50 p-4 rounded-2xl border-2 border-pink-100 group relative"
-                    >
-                      <div className="text-pink-300 text-sm font-mono mb-1 truncate">
-                        {item.equation} =
-                      </div>
-                      <div className="text-pink-600 text-xl font-bold">
-                        {item.result}
-                      </div>
-                    </motion.div>
-                  ))
-                )}
-              </div>
-
-              {history.length > 0 && (
-                <button
-                  onClick={() => setHistory([])}
-                  className="mt-6 w-full py-3 bg-pink-100 text-pink-600 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-pink-200 transition-colors"
-                >
-                  <Trash2 size={18} />
-                  Clear History
-                </button>
-              )}
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
+    <div className="min-h-screen bg-pink-50 flex flex-col items-center justify-center p-4 font-sans select-none overflow-hidden touch-none">
       {/* Piggy Head Container */}
       <div className="relative w-full max-w-xs">
         
